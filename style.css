@@ -25,12 +25,21 @@ a {
     text-decoration: none;
 }
 
-label[for='submit'] input:nth-child(2){/*제출 버튼 제거*/
+label[for='submit'] button:nth-child(2){/*제출 버튼 제거*/
     display: none;
 }
 
 label[for='submit-ipfs'] input:nth-child(2){/*제출 버튼 제거*/
     display: none;
+}
+
+input[type='password'] {
+    color: var(--button_color);
+    border: 1px solid lightgrey;
+    outline: none;
+    border-radius: 5px;
+    font-size: 17px;
+    transition: all 0.3s;
 }
 
 .upload::file-selector-button{ /*파일 업로드 버튼 제거*/
@@ -44,8 +53,8 @@ label[for='submit-ipfs'] input:nth-child(2){/*제출 버튼 제거*/
 }
 
 ._{
-    margin-top: 50vh; 
-    transform: translateY(-75%);
+    //margin-top: 50vh; 
+    //transform: translateY(75%);
 }
 
 .main{
