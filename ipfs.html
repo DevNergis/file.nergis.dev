@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en" xml:lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>FileFlower - IPFS</title>
+		<link rel="shortcut icon" href="https://fastapi.tiangolo.com/img/favicon.png">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="style.css">
+		<script>
+			function updateSize() {
+				let nBytes = 0,
+					oFiles = document.getElementById("file").files,
+					nFiles = oFiles.length;
+
+				for (let nFileId = 0; nFileId < nFiles; nFileId++) {
+				  nBytes += oFiles[nFileId].size;
+				}
+
+				let sOutput = nBytes + " bytes";
+
+				// multiples approximation을 위한 선택적 코드
+				for (
+				  	let aMultiples = [
+						"KiB",
+					  	"MiB",
+					  	"GiB",
+					  	"TiB",
+					  	"PiB",
+					  	"EiB",
+					  	"ZiB",
+					  	"YiB",
+					],
+					nMultiple = 0,
+					nApprox = nBytes / 1024;
+				  	nApprox > 1;
+				  	nApprox /= 1024, nMultiple++
+				) {
+				  sOutput =
+					nApprox.toFixed(3) +
+					"" +
+					aMultiples[nMultiple] +
+					" (" +
+					nBytes +
+					" bytes)";
+				}
+				// 선택적 코드의 끝
+				document.getElementById("fileNum").innerHTML = nFiles;
+				document.getElementById("fileSize").innerHTML = sOutput;
+			};
+		</script>
+  	</head>
+
+	<body onload="updateSize();">
+		<div class="_">
+			<div class="main" id="main">
+				<h1>FileFlower - IPFS</h1>
+				<h2>Expiration date: Infinity<br />Size limit: 100MiB</h2>
+                <h5><a href="/">MAIN</a></h5>
+				<h3><span id="status"></span></h3>
+				<h4><span id="url"></span></h4>
+			</div>	
+			<form name="uploadForm" method=post enctype=multipart/form-data>
+				<div class="label">
+					<label for="file">
+						<div class="btn-upload">올릴 파일 선택</div>
+						<input
+						class="upload"
+						id="file"
+						type="file"
+						name="myFiles"
+						onchange="updateSize();"
+						multiple />
+					</label>
+					<label for="submit">
+						<div class="btn-upload">선택 파일 올리기</div>
+						<button id="submit" type="submit">Send file</button>
+					</label>
+				</div>
+				<div class="label">
+					<label for="file-info">
+						<div class="btn-upload">
+							<a>selected files: <span id="fileNum">0</span><br />total size: <span id="fileSize">0</span></a>
+						</div>
+					</label>
+				</div>
+			</form>
+			<footer>Note: The names and data of files uploaded to IPFS are publicly visible. Additionally, deletion and modification are not possible.<br />Email: admin@textcord.xyz</footer>
+		</div>
+	</body>
+
+  	<script>
+		const form = document.querySelector('form');
+
+		form.addEventListener('submit', async (e) => {
+			e.preventDefault();
+
+			const fileList = document.getElementById("file").files;
+			var formData = new FormData();
+
+			for (let i = 0; i < fileList.length; i++) {
+				formData.append("files", fileList[i], fileList[i].name);
+			};
+
+			document.getElementById("status").innerHTML = "Uploading...";
+			await FileUpload(formData);
+		});
+
+		async function FileUpload(file) {
+			const response = await fetch(
+				"https://api.nergis.dev/v1/ipfs/upload",
+				{
+					method: "POST",
+					body: file,
+				}
+			);
+
+			if (response.ok) {
+				document.getElementById("status").innerHTML = "Done!";
+				const result = await response.json();
+				console.log(result);
+				console.table(result.file_direct);
+				let text = "";
+				for (let i = 0; i < result.file_direct.length; i++) {
+					console.log(result.file_direct[i])
+					text = text + '<a rel="noopener" href="' + result.file_direct[i] + '" target="_blank">' + result.file_direct[i] + "</a>" + "<br />";
+				};
+				console.log(text);
+				document.getElementById("url").innerHTML = text;
+			};
+		};
+  	</script>
+</html>

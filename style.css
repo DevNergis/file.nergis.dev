@@ -65,7 +65,7 @@ input[type='password'] {
     display: flex; 
     width: 560px; 
     margin-left: 50%; 
-    transform: translateX(-50%); 
+    transform: translateX(-50%);
     position: relative;
 }
 
@@ -85,4 +85,8 @@ label div{
 
 label div:hover{
     background-color: var(--button_hover_color);
+}
+
+footer {
+    text-align: center; 
 }
