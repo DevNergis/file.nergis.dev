@@ -23,6 +23,7 @@
 				border-radius: 5px;
 			}
 		</style>
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 		<script>
 			function updateSize() {
 				let nBytes = 0,
@@ -115,58 +116,48 @@
 	</body>
 
   	<script>
-		const form = document.querySelector('form');
+		$(document).ready(function() {
+			$('form').on('submit', function(e) {
+				e.preventDefault();
 
-		form.addEventListener('submit', async (e) => {
-			e.preventDefault();
+				const fileList = $('#file')[0].files;
+				const password = $('#password').val();
+				const formData = new FormData();
 
-			const fileList = document.getElementById("file").files;
-			const password = document.getElementById("password").value;
-			var formData = new FormData();
+				for (let i = 0; i < fileList.length; i++) {
+					formData.append("files", fileList[i], fileList[i].name);
+				}
 
-			for (let i = 0; i < fileList.length; i++) {
-				formData.append("files", fileList[i], fileList[i].name);
-			};
+				$('#status').text("Uploading...");
 
-			document.getElementById("status").innerHTML = "Uploading...";
-			await FileUpload(formData, password);
+				$.ajax({
+					url: "https://api.nergis.dev/v1/file/upload",
+					type: "POST",
+					data: formData,
+					contentType: false,
+					processData: false,
+					headers: password ? { "x-password": password } : {},
+					xhr: function() {
+						const xhr = new window.XMLHttpRequest();
+						xhr.upload.addEventListener("progress", function(e) {
+							if (e.lengthComputable) {
+								const percentComplete = (e.loaded / e.total) * 100;
+								$('#progressBar').css('width', percentComplete + '%');
+								$('#progressBar').text(percentComplete.toFixed(2) + '%');
+							}
+						}, false);
+						return xhr;
+					},
+					success: function(response) {
+						$('#status').text("Done!");
+						let text = "";
+						for (let i = 0; i < response.file_direct.length; i++) {
+							text += '<a rel="noopener" href="' + response.file_direct[i] + '" target="_blank">' + response.file_direct[i] + "</a><br />";
+						}
+						$('#url').html(text);
+					}
+				});
+			});
 		});
-
-		async function FileUpload(file, password) {
-			const progressBar = document.getElementById("progressBar");
-
-			const xhr = new XMLHttpRequest();
-			xhr.open("POST", "https://api.nergis.dev/v1/file/upload", true);
-
-			if (password !== "") {
-				xhr.setRequestHeader("x-password", password);
-			}
-
-			xhr.upload.onprogress = function (e) {
-				if (e.lengthComputable) {
-					const percentComplete = (e.loaded / e.total) * 100;
-					progressBar.style.width = percentComplete + "%";
-					progressBar.innerText = percentComplete.toFixed(2) + "%";
-				}
-			};
-
-			xhr.onload = function () {
-				if (xhr.status === 200) {
-					document.getElementById("status").innerHTML = "Done!";
-					const result = JSON.parse(xhr.responseText);
-					console.log(result);
-					console.table(result.file_direct);
-					let text = "";
-					for (let i = 0; i < result.file_direct.length; i++) {
-						console.log(result.file_direct[i])
-						text = text + '<a rel="noopener" href="' + result.file_direct[i] + '" target="_blank">' + result.file_direct[i] + "</a>" + "<br />";
-					};
-					console.log(text);
-					document.getElementById("url").innerHTML = text;
-				}
-			};
-
-			xhr.send(file);
-		};
   	</script>
 </html>
