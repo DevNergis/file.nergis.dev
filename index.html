@@ -90,6 +90,10 @@
 					</label>
 				</div>
 			</form>
+			<div class="progress">
+				<progress id="progressBar" value="0" max="100"></progress>
+				<span id="progressText">0%</span>
+			</div>
 			<footer>Ⓒ Dev_Nergis / admin@nergis.dev</footer>
 		</div>
 	</body>
@@ -113,41 +117,41 @@
 		});
 
 		async function FileUpload(file, password) {
+			const progressBar = document.getElementById("progressBar");
+			const progressText = document.getElementById("progressText");
+
+			const xhr = new XMLHttpRequest();
+			xhr.open("POST", "https://api.nergis.dev/v1/file/upload", true);
+
 			if (password !== "") {
-				var response = await fetch(
-					"https://api.nergis.dev/v1/file/upload",
-					{
-						method: "POST",
-						headers: {
-							"x-password": password
-						},
-						body: file,
-					}
-				);
+				xhr.setRequestHeader("x-password", password);
 			}
-			else {
-				var response = await fetch(
-					"https://api.nergis.dev/v1/file/upload",
-					{
-						method: "POST",
-						body: file,
-					}
-				);
+
+			xhr.upload.onprogress = function (e) {
+				if (e.lengthComputable) {
+					const percentComplete = (e.loaded / e.total) * 100;
+					progressBar.value = percentComplete;
+					progressText.innerText = percentComplete.toFixed(2) + "%";
+				}
 			};
 
-			if (response.ok) {
-				document.getElementById("status").innerHTML = "Done!";
-				const result = await response.json();
-				console.log(result);
-				console.table(result.file_direct);
-				let text = "";
-				for (let i = 0; i < result.file_direct.length; i++) {
-					console.log(result.file_direct[i])
-					text = text + '<a rel="noopener" href="' + result.file_direct[i] + '" target="_blank">' + result.file_direct[i] + "</a>" + "<br />";
-				};
-				console.log(text);
-				document.getElementById("url").innerHTML = text;
+			xhr.onload = function () {
+				if (xhr.status === 200) {
+					document.getElementById("status").innerHTML = "Done!";
+					const result = JSON.parse(xhr.responseText);
+					console.log(result);
+					console.table(result.file_direct);
+					let text = "";
+					for (let i = 0; i < result.file_direct.length; i++) {
+						console.log(result.file_direct[i])
+						text = text + '<a rel="noopener" href="' + result.file_direct[i] + '" target="_blank">' + result.file_direct[i] + "</a>" + "<br />";
+					};
+					console.log(text);
+					document.getElementById("url").innerHTML = text;
+				}
 			};
+
+			xhr.send(file);
 		};
   	</script>
 </html>
