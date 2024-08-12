@@ -6,6 +6,23 @@
 		<link rel="shortcut icon" href="https://fastapi.tiangolo.com/img/favicon.png">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link rel="stylesheet" href="style.css">
+		<style>
+			.progress {
+				width: 100%;
+				background-color: #f3f3f3;
+				border-radius: 5px;
+				margin-top: 20px;
+			}
+			.progress-bar {
+				width: 0%;
+				height: 30px;
+				background-color: #4caf50;
+				text-align: center;
+				line-height: 30px;
+				color: white;
+				border-radius: 5px;
+			}
+		</style>
 		<script>
 			function updateSize() {
 				let nBytes = 0,
@@ -91,8 +108,7 @@
 				</div>
 			</form>
 			<div class="progress">
-				<progress id="progressBar" value="0" max="100"></progress>
-				<span id="progressText">0%</span>
+				<div id="progressBar" class="progress-bar">0%</div>
 			</div>
 			<footer>Ⓒ Dev_Nergis / admin@nergis.dev</footer>
 		</div>
@@ -118,42 +134,39 @@
 
 		async function FileUpload(file, password) {
 			const progressBar = document.getElementById("progressBar");
-			const progressText = document.getElementById("progressText");
 
-			const options = {
-				method: "POST",
-				headers: password ? { "x-password": password } : {},
-				body: file,
+			const xhr = new XMLHttpRequest();
+			xhr.open("POST", "https://api.nergis.dev/v1/file/upload", true);
+
+			if (password !== "") {
+				xhr.setRequestHeader("x-password", password);
+			}
+
+			xhr.upload.onprogress = function (e) {
+				if (e.lengthComputable) {
+					const percentComplete = (e.loaded / e.total) * 100;
+					progressBar.style.width = percentComplete + "%";
+					progressBar.innerText = percentComplete.toFixed(2) + "%";
+				}
 			};
 
-			const response = await fetch("https://api.nergis.dev/v1/file/upload", options);
+			xhr.onload = function () {
+				if (xhr.status === 200) {
+					document.getElementById("status").innerHTML = "Done!";
+					const result = JSON.parse(xhr.responseText);
+					console.log(result);
+					console.table(result.file_direct);
+					let text = "";
+					for (let i = 0; i < result.file_direct.length; i++) {
+						console.log(result.file_direct[i])
+						text = text + '<a rel="noopener" href="' + result.file_direct[i] + '" target="_blank">' + result.file_direct[i] + "</a>" + "<br />";
+					};
+					console.log(text);
+					document.getElementById("url").innerHTML = text;
+				}
+			};
 
-			if (response.ok) {
-				document.getElementById("status").innerHTML = "Done!";
-				const result = await response.json();
-				console.log(result);
-				console.table(result.file_direct);
-				let text = "";
-				for (let i = 0; i < result.file_direct.length; i++) {
-					console.log(result.file_direct[i])
-					text = text + '<a rel="noopener" href="' + result.file_direct[i] + '" target="_blank">' + result.file_direct[i] + "</a>" + "<br />";
-				};
-				console.log(text);
-				document.getElementById("url").innerHTML = text;
-			}
+			xhr.send(file);
 		};
-
-		function updateProgress(e) {
-			if (e.lengthComputable) {
-				const percentComplete = (e.loaded / e.total) * 100;
-				progressBar.value = percentComplete;
-				progressText.innerText = percentComplete.toFixed(2) + "%";
-			}
-		}
-
-		const xhr = new XMLHttpRequest();
-		xhr.upload.addEventListener("progress", updateProgress);
-		xhr.open("POST", "https://api.nergis.dev/v1/file/upload", true);
-		xhr.send(formData);
   	</script>
 </html>
