@@ -65,74 +65,6 @@
 				document.getElementById("fileNum").innerHTML = nFiles;
 				document.getElementById("fileSize").innerHTML = sOutput;
 			};
-
-			function uploadChunk(file, start, end, chunkSize, totalSize, password, progressBar, resolve, reject) {
-				const chunk = file.slice(start, end);
-				const formData = new FormData();
-				formData.append("file", chunk, file.name);
-
-				$.ajax({
-					url: "https://api.nergis.dev/v1/file/upload",
-					type: "POST",
-					data: formData,
-					contentType: false,
-					processData: false,
-					headers: password ? { "x-password": password } : {},
-					xhr: function() {
-						const xhr = new window.XMLHttpRequest();
-						xhr.upload.addEventListener("progress", function(e) {
-							if (e.lengthComputable) {
-								const percentComplete = ((start + e.loaded) / totalSize) * 100;
-								progressBar.css('width', percentComplete + '%');
-								progressBar.text(percentComplete.toFixed(2) + '%');
-							}
-						}, false);
-						return xhr;
-					},
-					success: function(response) {
-						if (end < totalSize) {
-							uploadChunk(file, end, end + chunkSize, chunkSize, totalSize, password, progressBar, resolve, reject);
-						} else {
-							resolve(response);
-						}
-					},
-					error: function(err) {
-						reject(err);
-					}
-				});
-			}
-
-			$(document).ready(function() {
-				$('form').on('submit', function(e) {
-					e.preventDefault();
-
-					const fileList = $('#file')[0].files;
-					const password = $('#password').val();
-					const progressBar = $('#progressBar');
-					const chunkSize = 1024 * 1024; // 1MB
-
-					if (fileList.length > 0) {
-						const file = fileList[0];
-						const totalSize = file.size;
-
-						$('#status').text("Uploading...");
-
-						new Promise((resolve, reject) => {
-							uploadChunk(file, 0, chunkSize, chunkSize, totalSize, password, progressBar, resolve, reject);
-						}).then(response => {
-							$('#status').text("Done!");
-							let text = "";
-							for (let i = 0; i < response.file_direct.length; i++) {
-								text += '<a rel="noopener" href="' + response.file_direct[i] + '" target="_blank">' + response.file_direct[i] + "</a><br />";
-							}
-							$('#url').html(text);
-						}).catch(err => {
-							$('#status').text("Error!");
-							console.error(err);
-						});
-					}
-				});
-			});
 		</script>
   	</head>
 
@@ -182,4 +114,50 @@
 			<footer>Ⓒ Dev_Nergis / admin@nergis.dev</footer>
 		</div>
 	</body>
+
+  	<script>
+		$(document).ready(function() {
+			$('form').on('submit', function(e) {
+				e.preventDefault();
+
+				const fileList = $('#file')[0].files;
+				const password = $('#password').val();
+				const formData = new FormData();
+
+				for (let i = 0; i < fileList.length; i++) {
+					formData.append("files", fileList[i], fileList[i].name);
+				}
+
+				$('#status').text("Uploading...");
+
+				$.ajax({
+					url: "https://api.nergis.dev/v1/file/upload",
+					type: "POST",
+					data: formData,
+					contentType: false,
+					processData: false,
+					headers: password ? { "x-password": password } : {},
+					xhr: function() {
+						const xhr = new window.XMLHttpRequest();
+						xhr.upload.addEventListener("progress", function(e) {
+							if (e.lengthComputable) {
+								const percentComplete = (e.loaded / e.total) * 100;
+								$('#progressBar').css('width', percentComplete + '%');
+								$('#progressBar').text(percentComplete.toFixed(2) + '%');
+							}
+						}, false);
+						return xhr;
+					},
+					success: function(response) {
+						$('#status').text("Done!");
+						let text = "";
+						for (let i = 0; i < response.file_direct.length; i++) {
+							text += '<a rel="noopener" href="' + response.file_direct[i] + '" target="_blank">' + response.file_direct[i] + "</a><br />";
+						}
+						$('#url').html(text);
+					}
+				});
+			});
+		});
+  	</script>
 </html>
