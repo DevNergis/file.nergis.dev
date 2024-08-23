@@ -119,6 +119,8 @@
 		$(document).ready(function() {
 			$('form').on('submit', function(e) {
 				e.preventDefault();
+			    $('#progressBar').css('width', '0%');
+    			$('#progressBar').text('0%');
 
 				const fileList = $('#file')[0].files;
 				const password = $('#password').val();
@@ -142,6 +144,7 @@
 						xhr.upload.addEventListener("progress", function(e) {
 							if (e.lengthComputable) {
 								const percentComplete = (e.loaded / e.total) * 100;
+								console.log(`Progress: ${percentComplete}% (Loaded: ${e.loaded}, Total: ${e.total})`);
 								$('#progressBar').css('width', percentComplete + '%');
 								$('#progressBar').text(percentComplete.toFixed(2) + '%');
 							}
@@ -150,11 +153,23 @@
 					},
 					success: function(response) {
 						$('#status').text("Done!");
+						$('#progressBar').css('width', '100%');
+						$('#progressBar').text('100%');
 						let text = "";
 						for (let i = 0; i < response.file_direct.length; i++) {
-							text += '<a rel="noopener" href="' + response.file_direct[i] + '" target="_blank">' + response.file_direct[i] + "</a><br />";
+							const url = response.file_direct[i];
+							$.ajax({
+								url: "https://sqlr.kr/shorten",
+								type: "POST",
+								data: JSON.stringify({ "url": url }),
+								contentType: "application/json",
+								success: function(response) {
+									const shortLink = response.short_link;
+									text += '<a rel="noopener" href="' + shortLink + '" target="_blank">' + shortLink + "</a><br />";
+									$('#url').html(text);
+								}
+							});
 						}
-						$('#url').html(text);
 					}
 				});
 			});
