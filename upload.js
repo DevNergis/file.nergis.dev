@@ -40,60 +40,6 @@ function updateSize() {
 }
 
 /**
- * Handles the success of the upload process.
- * 
- * @param {Object} response - The response object containing the uploaded file information.
- * @returns {void}
- */
-function handleUploadSuccess(response) {
-    $('#status').text("Done!");
-    $('#progressBar').css('width', '100%');
-    $('#progressBar').text('100%');
-    let text = "";
-    for (let i = 0; i < response.file_direct.length; i++) {
-        const url = response.file_direct[i];
-        shortenUrl(url, function(shortLink) {
-            text += '<a rel="noopener" href="' + shortLink + '" target="_blank">' + shortLink + "</a><br />";
-            $('#url').html(text);
-        });
-    }
-}
-
-/**
- * Uploads files to the server.
- */
-function uploadFiles() {
-    const fileList = $('#file')[0].files;
-    const password = $('#password').val();
-    const formData = new FormData();
-    for (let i = 0; i < fileList.length; i++) {
-        formData.append("files", fileList[i], fileList[i].name);
-    }
-    $('#status').text("Uploading...");
-    $.ajax({
-        url: "https://api.nergis.dev/v1/file/upload",
-        type: "POST",
-        data: formData,
-        contentType: false,
-        processData: false,
-        headers: password ? { "x-password": password } : {},
-        xhr: function() {
-            const xhr = new window.XMLHttpRequest();
-            xhr.upload.addEventListener("progress", function(e) {
-                if (e.lengthComputable) {
-                    const percentComplete = (e.loaded / e.total) * 100;
-                    console.log(`Progress: ${percentComplete}% (Loaded: ${e.loaded}, Total: ${e.total})`);
-                    $('#progressBar').css('width', percentComplete + '%');
-                    $('#progressBar').text(percentComplete.toFixed(2) + '%');
-                }
-            }, false);
-            return xhr;
-        },
-        success: handleUploadSuccess
-    });
-}
-
-/**
  * Calculates the total size of selected files and updates the file count and size display.
  */
 function updateSize() {
@@ -157,13 +103,13 @@ $(document).ready(function() {
                 $('#status').text("Done!");
                 $('#progressBar').css('width', '100%');
                 $('#progressBar').text('100%');
-                let text = "";
+                $('#url').html('');
                 for (let i = 0; i < response.file_direct.length; i++) {
                     const url = response.file_direct[i];
                     $.ajax({
                         url: "https://sqlr.kr/shorten",
                         type: "POST",
-                        data: JSON.stringify({ "url": url }),
+                        data: JSON.stringify({ url }),
                         contentType: "application/json",
                         success: function(response) {
                             const shortLink = response.short_link;
