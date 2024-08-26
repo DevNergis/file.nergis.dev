@@ -74,25 +74,15 @@ $(document).ready(function() {
             formData.append("files", fileList[i], fileList[i].name);
         }
         $('#status').text("Uploading...");
+
+        const startTime = Date.now(); // 업로드 시작 시간 기록
+
         $.ajax({
-            url: "https://api.nergis.dev/v1/file/upload",
-            type: "POST",
-            data: formData,
-            contentType: false,
-            processData: false,
-            headers: password ? { "x-password": password } : {},
             xhr: function() {
-                const xhr = new window.XMLHttpRequest();
-                xhr.upload.addEventListener("progress", function(e) {
-                    if (e.lengthComputable) {
-                        /**
-                         * Calculates the percentage of completion.
-                         *
-                         * @param {number} percentComplete - The percentage of completion.
-                         * @returns {number} - The calculated percentage.
-                         */
-                        const percentComplete = (e.loaded / e.total) * 100;
-                        console.log(`Progress: ${percentComplete}% (Loaded: ${e.loaded}, Total: ${e.total})`);
+                var xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener("progress", function(evt) {
+                    if (evt.lengthComputable) {
+                        var percentComplete = (evt.loaded / evt.total) * 100;
                         $('#progressBar').css('width', percentComplete + '%');
                         $('#progressBar').text(percentComplete.toFixed(2) + '%');
                     }
@@ -100,9 +90,15 @@ $(document).ready(function() {
                 return xhr;
             },
             success: function(response) {
+                const endTime = Date.now(); // 업로드 완료 시간 기록
+                const duration = (endTime - startTime) / 1000; // 업로드 시간 (초)
+                const totalSizeMB = Array.from(fileList).reduce((acc, file) => acc + file.size, 0) / (1024 * 1024); // 총 파일 크기 (MB)
+                const uploadSpeed = (totalSizeMB / duration).toFixed(2); // 업로드 속도 (MB/s)
+
                 $('#status').text("Done!");
                 $('#progressBar').css('width', '100%');
                 $('#progressBar').text('100%');
+                $('#uploadSpeed').text(uploadSpeed); // 업로드 속도 표시
                 $('#url').html('');
                 for (let i = 0; i < response.file_direct.length; i++) {
                     const url = response.file_direct[i];
@@ -124,7 +120,7 @@ $(document).ready(function() {
                             document.getElementById('url').appendChild(urlContainer);
                         }
                     });
-                };
+                }
             }
         });
     });
