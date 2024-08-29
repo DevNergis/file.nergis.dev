@@ -18,27 +18,6 @@ function copyToClipboard(url) {
     });
 };
 
-function updateSize() {
-    let nBytes = 0,
-        oFiles = document.getElementById("file").files,
-        nFiles = oFiles.length;
-    for (let nFileId = 0; nFileId < nFiles; nFileId++) {
-        nBytes += oFiles[nFileId].size;
-    }
-    let sOutput = nBytes + " bytes";
-    for (
-        let aMultiples = ["KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"],
-        nMultiple = 0,
-        nApprox = nBytes / 1024;
-        nApprox > 1;
-        nApprox /= 1024, nMultiple++
-    ) {
-        sOutput = nApprox.toFixed(3) + " " + aMultiples[nMultiple] + " (" + nBytes + " bytes)";
-    }
-    document.getElementById("fileNum").innerHTML = nFiles;
-    document.getElementById("fileSize").innerHTML = sOutput;
-}
-
 /**
  * Calculates the total size of selected files and updates the file count and size display.
  */
@@ -78,6 +57,12 @@ $(document).ready(function() {
         const startTime = Date.now(); // 업로드 시작 시간 기록
 
         $.ajax({
+            url: "https://api.nergis.dev/v1/file/upload",
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            headers: password ? { "x-password": password } : {},
             xhr: function() {
                 var xhr = new window.XMLHttpRequest();
                 xhr.upload.addEventListener("progress", function(evt) {
@@ -100,7 +85,6 @@ $(document).ready(function() {
                 $('#progressBar').text('100%');
                 $('#uploadSpeed').text(uploadSpeed); // 업로드 속도 표시
                 $('#url').html('');
-                console.log(response);
                 for (let i = 0; i < response.file_direct.length; i++) {
                     const url = response.file_direct[i];
                     $.ajax({
